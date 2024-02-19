@@ -26,13 +26,13 @@ xc = 0; yc = 0; zc = 0; %center of mass set to be origin and stationary
 
 %initialize data
 thetad = 0.001;
-theta = 0:thetad:6.4;
+theta = 0:thetad:8;
 theta = theta';
 x0 = 1;
 y0 = 0;
 z0 = 0;
 vx0 = 0; %only works for starting from apogee and in x-y plane anticlockwise now. Need revision to work for random location and angle.
-vy0 = 0.3;
+vy0 = 0.6;
 vz0 = 0;
 r0 = sqrt( (x0-xc)^2 + (y0-yc)^2 + (z0-zc)^2 );
 Er0 = -GM*m/r0 + 0.5*m*(vx0^2 + vy0^2 + vz0^2);
@@ -42,7 +42,7 @@ vcr = cross([x0-xc, y0-yc, z0-zc], [vx0, vy0, vz0]);
 vcr = sqrt(dot(vcr, vcr));
 a0 = vcr^2/GM/RE;
 
-dataV = zeros(length(theta), 6);  % theta, x, y, z, wf, r, Er, t
+dataV = zeros(length(theta), 6);  % theta, x, y, wf, r, Er, t
 dataV(:,1) = theta;
 dataV(1, 2) = x0;
 dataV(1, 3) = y0;
@@ -83,6 +83,10 @@ end
 
 figure; 
 plot(dataV(:,2), dataV(:,3));
+
+figure; plot(real(dataV(:, 5)), real(dataV(:,4))); hold on; 
+plot(real(dataV(:, 5)), imag(dataV(:,4)));
+
 
 %% functions
 % find the wavefunction:
