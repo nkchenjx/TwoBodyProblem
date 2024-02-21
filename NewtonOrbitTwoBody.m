@@ -22,8 +22,8 @@ m1 = 1;
 m2 = 2;
 xc = 0; yc = 0; zc = 0; %center of mass set to be stationary as the inertia reference frame, thus two bodies have correlated freedom.
 
-dt = 0.01;
-t = 0:dt:100;
+dt = 0.001;
+t = 0:dt:50;
 t = t';
 
 %initialize data
@@ -31,7 +31,7 @@ x10 = 2;  % initialize state of m1
 y10 = 0;
 z10 = 0;
 vx10 = 0;
-vy10 = 0.8;
+vy10 = 0.6;
 vz10 = 0;
 
 x20 = (xc-x10)*m1/m2 + xc; % state of m2 is clculatied to keep the center of mass stationary

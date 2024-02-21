@@ -24,8 +24,8 @@ m = 1;
 xc = 0; yc = 0; zc = 0; %center of mass set to be origin and stationary
 
 %initialize data
-dt = 0.001;
-t = 0:dt:2.5;
+dt = 0.0001;
+t = 0:dt:5;
 t = t';
 x0 = 1;
 y0 = 0;
@@ -41,13 +41,14 @@ vcr = cross([x0-xc, y0-yc, z0-zc], [vx0, vy0, vz0]);
 vcr = sqrt(dot(vcr, vcr));
 a0 = vcr^2/GM/RE;
 
-dataV = zeros(length(t), 6);  % t, x, y, z, wf, r, Er
+dataV = zeros(length(t), 7);  % t, x, y, z, wf, r, Er, theta
 dataV(:,1) = t;
 dataV(1, 2) = x0;
 dataV(1, 3) = y0;
 dataV(1, 4) = findwf(x0, y0, xc, yc, Er0, a0, GM, m);
 dataV(1, 5) = r0;
 dataV(1, 6) = Er0;
+dataV(1, 7) = 0;
 
 
 %calculate state stepwisely
@@ -59,16 +60,9 @@ for i = 2:length(t)
     theta1 = atan2d(y1-yc, x1-xc)*pi()/180;
     thetad = real(phi1)/m*dt/r1;
     theta2 = theta1 + thetad;
-    if y1 >= 0
-        approach = true;
-    else
-        approach = false;
-    end
-    if approach
-        r2 = r1*cos(thetad) - imag(phi1)/m*dt; % - OR + ???
-    else
-        r2 = r1/cos(thetad) + imag(phi1)/m*dt; % - OR + ???
-    end
+
+    r2 = r1/cos(thetad) + imag(phi1)/m*dt; % - OR + ???
+ 
     x2 = r2*cos(theta2) + xc;
     y2 = r2*sin(theta2) + yc;
 
@@ -77,17 +71,33 @@ for i = 2:length(t)
     dataV(i, 4) = findwf(x2, y2, xc, yc, Er0, a0, GM, m);
     dataV(i, 5) = sqrt((x2-xc)^2 + (y2-yc)^2);
     dataV(i, 6) = Er0;
+    dataV(i, 7) = theta2;
 end
 
 figure; 
 plot(dataV(:,2), dataV(:,3));
+
+figure; plot(real(dataV(:, 5)), real(dataV(:,4))); hold on; 
+plot(real(dataV(:, 5)), imag(dataV(:,4))); xlabel('r');
+
+figure; plot(real(dataV(:, 1)), real(dataV(:,4))); hold on; 
+plot(real(dataV(:, 1)), imag(dataV(:,4))); xlabel('t');
+
+figure; plot(real(dataV(:, 7)), real(dataV(:,4))); hold on; 
+plot(real(dataV(:, 7)), imag(dataV(:,4))); xlabel('theta');
 
 %% functions
 % find the wavefunction:
 function phi = findwf(x1, y1, xc, yc, Er0, a0, GM, m)
     r = sqrt((x1-xc)^2 + (y1-yc)^2);
     RE = -GM*m/2/Er0;
-    vp = abs(sqrt(a0*GM*RE)/r);
-    vr = abs(sqrt(-GM/RE + 2*GM/r - a0*GM*RE/r^2)); %some case near 0 has a leak and cause v to be imaginary, so add abs.
-    phi = m*vp + 1i*m*vr;
-end
+    vp = abs(sqrt(a0*GM*RE)/r); %some case near 0 has a leak and cause v to be imaginary, so add abs.
+    vr = abs(sqrt(-GM/RE + 2*GM/r - a0*GM*RE/r^2));
+    if y1 >= 0  % only works if x axis is the long semi-axis and apogee is on the right. Need transformation for other cases.
+        approach = true; % moving away from apogee
+        phi = m*vp - 1i*m*vr;
+    else
+        approach = false;
+        phi = m*vp + 1i*m*vr;
+    end
+ end

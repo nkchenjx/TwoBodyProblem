@@ -59,17 +59,20 @@ for i = 2:length(theta)
     
     theta1 = dataV(i-1, 1);
     theta2 = dataV(i, 1);
-    if y1 >= 0
-        approach = true;
-    else
-        approach = false;
-    end
     dt = thetad*r1*m/real(ph1);
-    if approach % moving away from apogee
-        r2 = r1*cos(thetad) - imag(ph1)/m*dt; % - OR + ???
-    else  % moving away form perigee
-        r2 = r1/cos(thetad) + imag(ph1)/m*dt; % - OR + ???
-    end
+%     if y1 >= 0
+%         approach = true;
+%     else
+%         approach = false;
+%     end    
+%     if approach % moving away from apogee
+%         r2 = r1*cos(thetad) - imag(ph1)/m*dt; % - OR + ???
+%     else  % moving away form perigee
+%         r2 = r1/cos(thetad) + imag(ph1)/m*dt; % - OR + ???
+%     end
+    r2 = r1/cos(thetad) + imag(ph1)/m*dt;
+    
+        
     x2 = r2*cos(theta2) + xc;
     y2 = r2*sin(theta2) + yc;
 
@@ -85,8 +88,13 @@ figure;
 plot(dataV(:,2), dataV(:,3));
 
 figure; plot(real(dataV(:, 5)), real(dataV(:,4))); hold on; 
-plot(real(dataV(:, 5)), imag(dataV(:,4)));
+plot(real(dataV(:, 5)), imag(dataV(:,4))); xlabel('r');
 
+figure; plot(real(dataV(:, 1)), real(dataV(:,4))); hold on; 
+plot(real(dataV(:, 1)), imag(dataV(:,4))); xlabel('theta');
+
+figure; plot(real(dataV(:, 7)), real(dataV(:,4))); hold on; 
+plot(real(dataV(:, 7)), imag(dataV(:,4))); xlabel('t');
 
 %% functions
 % find the wavefunction:
@@ -95,5 +103,11 @@ function phi = findwf(x1, y1, xc, yc, Er0, a0, GM, m)
     RE = -GM*m/2/Er0;
     vp = abs(sqrt(a0*GM*RE)/r); %some case near 0 has a leak and cause v to be imaginary, so add abs.
     vr = abs(sqrt(-GM/RE + 2*GM/r - a0*GM*RE/r^2));
-    phi = m*vp + 1i*m*vr;
-end
+    if y1 >= 0  % only works if x axis is the long semi-axis and apogee is on the right. Need transformation for other cases.
+        approach = true; % moving away from apogee
+        phi = m*vp - 1i*m*vr;
+    else
+        approach = false;
+        phi = m*vp + 1i*m*vr;
+    end
+ end
