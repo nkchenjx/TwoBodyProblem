@@ -25,14 +25,14 @@ m = 1;
 xc = 0; yc = 0; zc = 0; %center of mass set to be origin and stationary
 
 %initialize data
-thetad = 0.0001;
+thetad = 0.001;
 theta = 0:thetad:20;
 theta = theta';
 x0 = 1;
 y0 = 0;
 z0 = 0;
 vx0 = 0; %only works for starting from apogee and in x-y plane anticlockwise now. Need revision to work for random location and angle.
-vy0 = 0.8;
+vy0 = 0.6;
 vz0 = 0;
 t0 = 0;
 r0 = sqrt( (x0-xc)^2 + (y0-yc)^2 + (z0-zc)^2 );
@@ -68,11 +68,16 @@ for i = 2:length(theta)
         approach = true;
     else
         approach = false;
-    end    
+    end  
+%     if approach % moving away from apogee
+%         r2 = r1 - imag(ph1)/m*dt; % - OR + ???
+%     else  % moving away form perigee
+%         r2 = r1 + imag(ph1)/m*dt; % - OR + ???
+%     end
     if approach % moving away from apogee
-        r2 = r1*cos(thetad) - imag(ph1)/m*dt; % - OR + ???
+        r2 = r1*cos(thetad) - abs(imag(ph1))/m*dt; % - OR + ???
     else  % moving away form perigee
-        r2 = r1/cos(thetad) + imag(ph1)/m*dt; % - OR + ???
+        r2 = r1/cos(thetad) + abs(imag(ph1))/m*dt; % - OR + ???
     end
     
         
@@ -88,10 +93,11 @@ for i = 2:length(theta)
 end
 
 figure; 
-plot(dataV(:,2), dataV(:,3));
+plot(dataV(:,2), dataV(:,3)); hold on;
+plot(xc, yc, 'k+', 'markersize', 10, 'linewidth', 2); 
 
 figure; plot(real(dataV(:, 4)), real(phi(:))); hold on; 
-plot(real(dataV(:, 4)), imag(phi(:))); xlabel('r');
+plot(real(dataV(:, 4)), imag(phi(:))); xlabel('r'); 
 
 figure; plot(real(dataV(:, 1)), real(phi(:))); hold on; 
 plot(real(dataV(:, 1)), imag(phi(:))); xlabel('theta');
@@ -106,5 +112,12 @@ function phi = findwf(x1, y1, xc, yc, Er0, a0, GM, m)
     RE = -GM*m/2/Er0;
     vc = abs(sqrt(a0*GM*RE)/r); %some case near 0 has a leak and cause v to be imaginary, so add abs.
     vr = abs(sqrt(-GM/RE + 2*GM/r - a0*GM*RE/r^2));
-    phi = m*vc + 1i*m*vr;
+    if y1 >= 0 %only works of the condistion to set apogee at y = 0 and positive x.
+        % approach = true;
+        phi = m*vc - 1i*m*vr;
+    else
+        % approach = false;
+        phi = m*vc + 1i*m*vr;
+    end  
+    
  end
