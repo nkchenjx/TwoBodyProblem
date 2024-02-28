@@ -31,6 +31,7 @@ theta = theta';
 x0 = 1;
 y0 = 0;
 z0 = 0;
+
 vx0 = 0; %only works for starting from apogee and in x-y plane anticlockwise now. Need revision to work for random location and angle.
 vy0 = 0.6;
 vz0 = 0;
@@ -51,7 +52,14 @@ dataV(1, 4) = r0;
 dataV(1, 5) = Er0;
 dataV(1, 6) = t0;
 
-phi(1, 1) = findwf(x0, y0, xc, yc, Er0, a0, GM, m); % using complex number slows down calculation so maybe split it to a different array or use mvr mvi instead.
+if vx0 <= 0
+    sign = -1; %aproaching center
+else
+    sign = 1;
+end
+phi(1, 1) = findwf(x0, y0, xc, yc, Er0, a0, GM, m, sign); % using complex number slows down calculation so maybe split it to a different array or use mvr mvi instead.
+
+[rapogee, rperigee] = findsemiaxis(x0, y0, z0, xc, yc, zc, vx0, vy0, vz0, GM, m);
 
 
 %calculate state stepwisely
@@ -64,32 +72,26 @@ for i = 2:length(theta)
     theta2 = dataV(i, 1);
     dt = thetad*r1*m/real(ph1);
     
-    if y1 >= 0
-        approach = true;
-    else
-        approach = false;
-    end  
-%     if approach % moving away from apogee
-%         r2 = r1 - imag(ph1)/m*dt; % - OR + ???
-%     else  % moving away form perigee
-%         r2 = r1 + imag(ph1)/m*dt; % - OR + ???
-%     end
-    if approach % moving away from apogee
-        r2 = r1*cos(thetad) - abs(imag(ph1))/m*dt; % - OR + ???
-    else  % moving away form perigee
-        r2 = r1/cos(thetad) + abs(imag(ph1))/m*dt; % - OR + ???
+    if r1 <= rperigee 
+        sign = 1;
     end
-    
-        
+    if r1 >= rapogee 
+        sign = -1;
+    end
+  
+    r2 = r1 + sign*abs(imag(ph1))/m*dt; % - OR + ???
+      
     x2 = r2*cos(theta2) + xc;
     y2 = r2*sin(theta2) + yc;
 
     dataV(i, 2) = x2;
     dataV(i, 3) = y2;
-    dataV(i, 4) = sqrt((x2-xc)^2 + (y2-yc)^2);
+    dataV(i, 4) = r2;
     dataV(i, 5) = Er0;
     dataV(i, 6) = dataV(i-1, 6) + dt;
-    phi(i, 1) = findwf(x2, y2, xc, yc, Er0, a0, GM, m);
+    phi(i, 1) = findwf(x2, y2, xc, yc, Er0, a0, GM, m, sign);
+    
+    
 end
 
 figure; 
@@ -107,17 +109,29 @@ plot(real(dataV(:, 6)), imag(phi(:))); xlabel('t');
 
 %% functions
 % find the wavefunction:
-function phi = findwf(x1, y1, xc, yc, Er0, a0, GM, m)
+function phi = findwf(x1, y1, xc, yc, Er0, a0, GM, m, sign)
     r = sqrt((x1-xc)^2 + (y1-yc)^2);
     RE = -GM*m/2/Er0;
     vc = abs(sqrt(a0*GM*RE)/r); %some case near 0 has a leak and cause v to be imaginary, so add abs.
     vr = abs(sqrt(-GM/RE + 2*GM/r - a0*GM*RE/r^2));
-    if y1 >= 0 %only works of the condistion to set apogee at y = 0 and positive x.
-        % approach = true;
-        phi = m*vc - 1i*m*vr;
-    else
-        % approach = false;
-        phi = m*vc + 1i*m*vr;
-    end  
+
+    phi = m*vc + sign*1i*m*vr;
+
+end
+ 
+function [ra, rp] = findsemiaxis(x, y, z, xc, yc, zc, vx, vy, vz, GM, m)
+    r = sqrt( (x-xc)^2 + (y-yc)^2 + (z-zc)^2 );
+    Er = -GM*m/r + 0.5*m*(vx^2 + vy^2 + vz^2);
+    RE = -GM*m/2/Er;
     
- end
+    vcr = cross([x-xc, y-yc, z-zc], [vx, vy, vz]);
+    vcr = sqrt(dot(vcr, vcr));
+    a0 = vcr^2/GM/RE;
+    
+    a = -a0*GM*RE;
+    b = 2*GM;
+    c = -GM/RE;
+    
+    ra = 2*a / (-b + sqrt(b^2-4*a*c));
+    rp = 2*a / (-b - sqrt(b^2-4*a*c));
+end

@@ -111,15 +111,15 @@ for i = 2:length(t)
     theta11 = atan2d(y11-yc, x11-xc)*pi()/180;
     thetad1 = vr11*dt/r11;
     theta12 = theta11 + thetad1;
-    if y11 < 0
+    if y11 < 0 % can be updated to use apogee and perigee to judge direction from onebody code
         approach1 = true;
     else
         approach1 = false;
     end
     if approach1
-        r12 = r11*cos(thetad1) - vi11*dt; % - OR + ???
+        r12 = r11 - vi11*dt; % - OR + ???
     else
-        r12 = r11/cos(thetad1) + vi11*dt; % - OR + ???
+        r12 = r11 + vi11*dt; % - OR + ???
     end
     x12 = r12*cos(theta12) + xc;
     y12 = r12*sin(theta12) + yc;
@@ -150,9 +150,9 @@ for i = 2:length(t)
         approach2 = false;
     end
     if approach2
-        r22 = r21*cos(thetad2) - vi21*dt; % - OR + ???
+        r22 = r21 - vi21*dt; % - OR + ???
     else
-        r22 = r21/cos(thetad2) + vi21*dt; % - OR + ???
+        r22 = r21 + vi21*dt; % - OR + ???
     end
     x22 = r22*cos(theta22) + xc;
     y22 = r22*sin(theta22) + yc;
